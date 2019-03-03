@@ -1,3 +1,4 @@
+
 console.log("Welcome to QUIKKY Smart Contract Auditor " + '\n');
 const path = require ('path');
 const solc = require ('solc');
@@ -9,17 +10,18 @@ var findInFiles = require('find-in-files');
 var readline = require('readline-sync');
 let contractName;
 var warnings = new Array() ;
-let testLevel ;
+let testLevel = 0;
+
+console.log('\n'+"Test Level is " + testLevel);
 
 try{
 contractName = readline.question("Enter the name of your file of your file: ");
 testLevel = readline.question("Do you want a QUIKKY test or a HANDWAX test level ?(enter 0 for quikky and 1 for handwax: ");
 console.log('\n'+"TITLE: " + contractName);
 
-if (testLevel = 0){
+if (testLevel ==0){
     console.log("QUIKKY job");
-}
-    else if (testLevel = 1 ){
+}  else if (testLevel == 1 ){
         console.log("DEEP job");
     }else{
         console.log("Test level input invalid");
@@ -373,19 +375,31 @@ for (let i=0; i<warnings.length; i++) {
     setAccountBalanceValve = false;
 };
 
+let soldidtyCoverageValve = false;
 
 for (let i=0; i<warnings.length; i++) {
 
     console.log(warnings[i] + '\n' );
    // console.log("There are " + actionLines.length + " action calls in this smart contract");
+   soldidtyCoverageValve = true;
 }
 
+if(soldidtyCoverageValve){
+
+console.log(
+    '\n'+
+    "GENERATING SOLIDITY COVERAGE REPORT "+
+    '\n'+
+    ">>>>>>>>>>>>>>>>>>>>>>");
+
+//Generate Solidity Coverage
+const path = require ('./node_modules/.bin/solidity-coverage');
+};
 
 
 }
 
 });
-
 
 
 
@@ -439,8 +453,10 @@ console.log("There are " + lineCount(data)+ " lines of code in your smart contra
 
 console.log("There are " + data.length + " characters in your smart contract");
 
+
 }
 }
+
 }
 
 

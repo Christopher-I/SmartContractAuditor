@@ -16,7 +16,7 @@ contract sampleContract {
     //approve
   }
 
-  function testFunction1(){
+  function testFunction1()public{
     //function() payable internal
     //.call.value()
   
@@ -29,7 +29,7 @@ contract sampleContract {
 //block.number
   }
 
-  function transfer(address _to, uint _value){
+  function transfer(address _to, uint _value)public{
 
   // require(payment != 0);
   // require(this.balance >= payment);
@@ -40,7 +40,7 @@ contract sampleContract {
     //.send(
   }
 
-    function withdraw(address _to, uint _value){//onlyPayloadSize
+    function withdraw(address _to, uint _value)public{//onlyPayloadSize
 
 
   }

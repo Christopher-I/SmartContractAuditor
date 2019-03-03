@@ -17,23 +17,16 @@
   },
   "homepage": "https://github.com/Christopher-I/SmartContractParser#readme",
   "dependencies": {
-    "find-in-files": "^0.4.0",
+    "chai": "^4.2.0",
     "ganache-cli": "^6.1.8",
     "mocha": "^5.2.0",
-    "next": "^4.1.4",
-    "next-routes": "^1.4.2",
-    "react": "^16.6.1",
-    "react-dom": "^16.6.1",
+    "openzeppelin-solidity": "^2.1.1",
     "readline-sync": "^1.4.9",
-    "semantic": "0.0.1",
-    "semantic-ui-react": "^0.83.0",
     "solc": "^0.4.25",
-    "truffle": "^4.1.15",
-    "truffle-hdwallet-provider": "0.0.6",
-    "web3": "^1.0.0-beta.26",
-    "chai": "^4.2.0",
+    "truffle": "^5.0.1",
     "solidity-coverage": "^0.5.11",
     "truffle-assertions": "^0.7.1",
-    "openzeppelin-solidity": "^2.1.1"
+    "truffle-hdwallet-provider": "^1.0.4",
+    "web3": "^1.0.0-beta.26"
   }
 }
