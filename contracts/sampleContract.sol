@@ -6,6 +6,7 @@ contract sampleContract {
 
   constructor() public {
     owner = msg.sender;
+
   }
 
   modifier restricted() {
@@ -13,11 +14,14 @@ contract sampleContract {
   }
 
   function testFunction1(){
-    
+    //function() payable internal
+    //.call.value()
+  
   }
 
   function setCompleted(uint completed) public payable  {
     last_completed_migration = completed;
+
   }
 
 }
