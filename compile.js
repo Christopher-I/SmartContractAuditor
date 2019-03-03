@@ -127,6 +127,8 @@ fs.readFile(contractPath, {encoding: 'utf-8'}, function(err, data) {
     let searchCurlyBrace = '()';
     let lastIndex = -1; // let say, we have not found the keyword
     let actionLines = new Array();
+    let laws = 0;
+    let EIPE20Check = 0;
 
 
 
@@ -151,7 +153,7 @@ fs.readFile(contractPath, {encoding: 'utf-8'}, function(err, data) {
         };
 
         // Audit payable transaction restrictions
-        if (dataArray[index].includes(searchFunction) && dataArray[index].includes('(')) { //find function calls
+        if ((dataArray[index].includes(searchFunction)) && dataArray[index].includes('(')) { //find function calls
             if (dataArray[index].includes('payable')){ //check if contract is payable
                 if (!dataArray[index].includes('internal') && !dataArray[index].includes('restricted')){ //check if contract is payable 
 
@@ -161,7 +163,6 @@ fs.readFile(contractPath, {encoding: 'utf-8'}, function(err, data) {
         }
         }
     
-
     //Audting state changes after external calls
         if (dataArray[index].includes(searchExternalCall)) { //find external calls
             warn ="Avoid state changes after external calls -" + " line " + (index+1);       
@@ -197,6 +198,99 @@ fs.readFile(contractPath, {encoding: 'utf-8'}, function(err, data) {
         };
 
 
+        //Don't delegatecall to untrusted code
+        if (((dataArray[index].includes('.delegatecall')) && (dataArray[index].includes('(')))) { //find external calls
+            warn ="Ensure that the address being used in this delegate call is a trusted address and cannot be changed or supplied by a user, as the result can alter the state of your contract " + (index+1);       
+                warnings.push(warn);
+                
+        }
+
+        //Audit function visibility 
+        if ((dataArray[index].includes(searchFunction)) && dataArray[index].includes('(') && (!dataArray[index].includes('internal')) &&
+        ((!dataArray[index].includes('external'))) && ((!dataArray[index].includes('private'))) && ((!dataArray[index].includes('public'))) ) {
+            warn ="Explicitly label the visibility of functions and state variables. Functions can be specified as being external, public, internal or private. " + (index+1);
+            warnings.push(warn); 
+
+        }
+
+            //Lock Pragma on specific solidity version
+        if ((dataArray[index].includes('pragma solidity')) && ((dataArray[index].includes('>')) || (dataArray[index].includes('^')) || (dataArray[index].includes('<'))) ) { //find external calls
+            warn ="Lock pragmas to specific compiler version. Locking the pragma helps ensure that contracts do not accidentally get deployed using, for example, the latest compiler which may have higher risks of undiscovered bugs -" + " line " + (index+1);       
+                warnings.push(warn);
+                
+        }
+
+            //Avoid using tx.origin
+        if (dataArray[index].includes('tx.origin')) { //find external calls
+            warn ="Avoid using tx.origin as it is unsafe, we recommend you should use msg.sender for authorization .-" + " line " + (index+1);       
+                warnings.push(warn);
+                
+        }
+
+         if (dataArray[index].includes('block.timestamp')) { //find external calls
+            warn ="Be aware that the timestamp of the block maybe inaccurate as it can be manipulated by a miner and other factors.-" + " line " + (index+1);       
+                warnings.push(warn);
+                
+        }
+
+        if (dataArray[index].includes('block.number')) { //find external calls
+            warn ="It is possible to estimate a time delta using the block.number property and average block time, however this is not future proof as block times may change.-" + " line " + (index+1);       
+                warnings.push(warn);
+                
+        }
+
+        //Use interface type instead of the address for type safety
+        if ((dataArray[index].includes(searchFunction)) && dataArray[index].includes('(') && dataArray[index].includes('address') ) { //find function calls
+                warn ="When a function takes a contract address as an argument, it is better to pass an interface or contract type rather than raw address. If the function is called elsewhere within the source code, the compiler it will provide additional type safety guarantees -" + " line " + (index+1);       
+                warnings.push(warn);
+
+        }
+
+        if (dataArray[index].includes('extcodesize')) { //find external calls
+            warn ="Avoid using extcodesize to check for Externally Owned Accounts." + " line " + (index+1);       
+                warnings.push(warn);
+                
+        }
+
+        if ((dataArray[index].includes('EIP-20')) || (dataArray[index].includes('approve(')) ){
+             EIPE20Check ++;
+
+            if (EIPE20Check >= 2){
+                warn ="The EIP-20 token's approve() function creates the potential for an approved spender to spend more than the intended amount. A front running attack can be used, enabling an approved spender to call transferFrom() both before and after the call to approve() is processed." + " line " + (index+1);       
+                warnings.push(warn);
+            }
+        }
+
+
+        //Prevent transferring tokens to the 0x0 address
+        if ((dataArray[index].includes(searchFunction)) && dataArray[index].includes('(') && (dataArray[index].includes('transferFrom') || dataArray[index].includes('transfer')) ) { //find function calls
+                warn ="Prevent transferring tokens to the 0x0 address and prevent transferring tokens to the same contract address. -" + 
+                "After your function declaration, you could the modifier:" +
+                "modifier validDestination( address to ) {" +
+                "require(to != address(0x0));" +
+                "require(to != address(this) );" +
+                "};" +
+                " line " + (index+1);       
+                warnings.push(warn);
+        }
+
+
+        //Safemath preventions
+        if ((dataArray[index].includes('uint256')) && (dataArray[index].includes('=')) && ((dataArray[index].includes('*')) || 
+        (dataArray[index].includes('-')) || (dataArray[index].includes('+')) || (dataArray[index].includes('/')) ) ) { //find external calls
+            warn ="Be aware that doing math functions on uint256 can cause overflows and underflows. We recommend you implement OpenZeppelin SafeMath. line " + (index+1);       
+                warnings.push(warn);
+                
+        }
+
+
+
+        //Prevent transferring tokens to the 0x0 address
+        if ((dataArray[index].includes(searchFunction)) && (dataArray[index].includes('(')) && ((dataArray[index].includes('transferFrom')) || 
+        (dataArray[index].includes('transfer')) || (dataArray[index].includes('withdraw'))) && (!dataArray[index].includes('onlyPayloadSize')))  { //find function calls
+                warn ="Prevent Short address attack by by introducing onlyPayloadSize modifier. line " + (index+1);       
+                warnings.push(warn);
+        }
 
 
 }
@@ -216,6 +310,9 @@ for (let i=0; i<warnings.length; i++) {
     console.log("DEEP CHECK" +'\n'+
         ">>>>>>>>>>>>>>>>>>>>>>>>>>" + '\n');
     let transferCount =0;
+    let setRequireStatementForIndividualBalanceNotZeroValve = false;
+    let setRequireStatementForAccountBalanceValve = false;
+    let setAccountBalanceValve = false;
 
     for (let k = 0; k<actionLines.length; k++){
 
@@ -229,17 +326,52 @@ for (let i=0; i<warnings.length; i++) {
                 warnings.push(warn);
 
             }
+        }
+
+        //check if there is require statement for individuals balance
+        if (((dataArray[i].includes('require('))) && ((dataArray[i].includes('='))) && ((dataArray[i].includes('!'))) ) {
+                setRequireStatementForIndividualBalanceNotZeroValve = true;
+        }
+
+
+        //check if there is require statement that sets smart contract account balance to 0
+        if (((dataArray[i].includes('require('))) && ((dataArray[i].includes('this.balance'))) ) {
+                setRequireStatementForAccountBalanceValve = true;
+        }
+
+
+        //check if users account balance has been set to zero
+        if (((dataArray[i].includes('='))) && ((dataArray[i].includes('0'))) ) {
+                setAccountBalanceValve = true;
+        }
+
+
+        //Audting for using .send()
+        if ((dataArray[i].includes('.send('))) {
+
+        if(!setRequireStatementForIndividualBalanceNotZeroValve){
+                warn = "Be aware of rerentrancy attack. Before withdraw or transfers, use a require statement to ensure user has available fund. Example require(UserBalance != 0); -" + (i+1) ;
+                warnings.push(warn); 
+            }
+
+        if(!setRequireStatementForAccountBalanceValve){
+                warn = "Be aware of rerentrancy attack. Before withdraw or transfers, use a require statement to ensure smart contract has available fund. require(this.balance >= payment); -" + (i+1) ;
+                warnings.push(warn); 
+            }
+
+        if(!setAccountBalanceValve){
+                warn = "Be aware of rerentrancy attack. Set post-withdrawal balance before sending. -" + (i+1) ;
+                warnings.push(warn); 
+            }
 
         }
+
     }
     transferCount = 0;//reset transfer count
+    setRequireStatementForIndividualBalanceNotZeroValve = false;
+    setRequireStatementForAccountBalanceValve = false;
+    setAccountBalanceValve = false;
 };
-
-
-
-
-
-
 
 
 for (let i=0; i<warnings.length; i++) {
@@ -312,5 +444,7 @@ console.log("There are " + data.length + " characters in your smart contract");
 }
 
 
-
+//Guideline information was dervied from various sources such as
+//https://consensys.github.io/
+//https://consensys.github.io/smart-contract-best-practices/known_attacks/#reentrancy
 
